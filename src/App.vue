@@ -1,30 +1,43 @@
-<script setup>
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <div>
-    <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
-    </a>
+  <div class="container">
+    <div v-for="(id, idx) in data" :key="idx" :class="['box', `box-${idx}`]">{{ id }}</div>
   </div>
-  <HelloWorld msg="Vite + Vue" />
+  <button @click="handleSwitch" class="btn-switch">Switch</button>
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+<script setup>
+import { computed } from 'vue';
+
+const data = computed(() => Array.from({length: 9}, (_, index) => index + 1)); // [1, 2, 3, 4, 5, 6, 7, 8, 9]
+data.value.sort(() => Math.random() - 0.5);
+
+const handleSwitch = () => {
+  const temp = data.value[0];
+  data.value[0] = data.value[1];
+  data.value[1] = temp;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+</script>
+
+<style lang="scss" scoped>
+.container {
+  display: grid;
+  grid-template: 1fr 1fr 1fr / 1fr 1fr 1fr;
+  width: 600px;
+  height: 600px;
+  border: 1px solid #fcfcfc;
+  border-radius: 6px;
+
+  .box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 198px;
+    height: 198px;
+    border: 1px solid #fcfcfc;
+  }
 }
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
+
+.btn-switch {
+  margin-top: 20px;
 }
 </style>
