@@ -1,43 +1,137 @@
 <template>
   <div class="container">
-    <div v-for="(id, idx) in data" :key="idx" :class="['box', `box-${idx}`]">{{ id }}</div>
+    <div class="wrapper">
+      <div v-for="id in data" :key="id" :class="['box', `box-${id}`]">{{ id === 9 ? '' : id }}</div>
+    </div>
+    <div class="controller">
+      <button @click="handleBtnUpClick" class="btn top">↑</button>
+      <div>
+        <button @click="handleBtnLeftClick" class="btn left">←</button>
+        <button @click="handleBtnDownClick" class="btn bottom">↓</button>
+        <button @click="handleBtnRightClick" class="btn right">→</button>
+      </div>
+    </div>
   </div>
-  <button @click="handleSwitch" class="btn-switch">Switch</button>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { reactive } from 'vue';
 
-const data = computed(() => Array.from({length: 9}, (_, index) => index + 1)); // [1, 2, 3, 4, 5, 6, 7, 8, 9]
-data.value.sort(() => Math.random() - 0.5);
+const base = 3;
+let emptyIndex = 0;
+let row = 0;
+let col = 0;
+const data = reactive(Array.from({length: 9}, (_, index) => index + 1)); // [1, 2, 3, 4, 5, 6, 7, 8, 9]
+data.sort(() => Math.random() - 0.5);
 
-const handleSwitch = () => {
-  const temp = data.value[0];
-  data.value[0] = data.value[1];
-  data.value[1] = temp;
+const calcEmptyInfo = () => {
+  emptyIndex = data.findIndex((id) => id === 9);
+  [row, col] = [Math.floor(emptyIndex / base), emptyIndex % base];
 }
+const switchPosition = (switchIndex = 0) => {
+  [data[emptyIndex], data[switchIndex]] = [data[switchIndex], data[emptyIndex]];
+
+  requestAnimationFrame(() => {
+    // check finish
+    let finish = true;
+    for (let i = 0; i < data.length - 1; i++) {
+      if (data[i] + 1 !== data[i + 1]) {
+        finish = false;
+        break;
+      }
+    }
+    if (finish) {
+      requestAnimationFrame(() => {
+        alert('Congrats! you finish the puzzle')
+      });
+    }
+  });
+
+  // calc
+  calcEmptyInfo();
+}
+const handleBtnUpClick = () => {
+  if (row === base - 1) return;
+  const switchIndex = (row + 1) * base + col;
+  switchPosition(switchIndex);
+}
+const handleBtnDownClick = () => {
+  if (row === 0) return;
+  const switchIndex = (row - 1) * base + col;
+  switchPosition(switchIndex);
+}
+const handleBtnLeftClick = () => {
+  if (col === base - 1) return;
+  const switchIndex = row * base + (col + 1);
+  switchPosition(switchIndex);
+}
+const handleBtnRightClick = () => {
+  if (col === 0) return;
+  const switchIndex = row * base + (col - 1);
+  switchPosition(switchIndex);
+}
+
+// event listener
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'ArrowUp') {
+    handleBtnUpClick();
+  } else if (event.key === 'ArrowDown') {
+    handleBtnDownClick();
+  } else if (event.key === 'ArrowLeft') {
+    handleBtnLeftClick();
+  } else if (event.key === 'ArrowRight') {
+    handleBtnRightClick();
+  }
+});
+
+// init
+calcEmptyInfo();
 </script>
 
 <style lang="scss" scoped>
 .container {
-  display: grid;
-  grid-template: 1fr 1fr 1fr / 1fr 1fr 1fr;
-  width: 600px;
-  height: 600px;
-  border: 1px solid #fcfcfc;
-  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 500px;
 
-  .box {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 198px;
-    height: 198px;
-    border: 1px solid #fcfcfc;
+  .wrapper {
+    display: grid;
+    grid-template: 1fr 1fr 1fr / 1fr 1fr 1fr;
+    width: 300px;
+    height: 300px;
+    border: 4px solid #fcfcfc;
+    border-radius: 6px;
+
+    .box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 98px;
+      height: 98px;
+      background: darkolivegreen;
+      border: 1px solid #fcfcfc;
+      font-size: 20px;
+      transition: 0.3s;
+  
+      &-9 {
+        background: black;
+      }
+    }
   }
-}
 
-.btn-switch {
-  margin-top: 20px;
+  .controller {
+    width: 300px;
+    height: 100px;
+    margin-top: 40px;
+
+    .btn {
+      width: 40px;
+      height: 40px;
+      margin: 2px;
+      padding: 0;
+      border: 1px solid #fff;
+    }
+  }
 }
 </style>
