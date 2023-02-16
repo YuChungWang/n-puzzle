@@ -31,11 +31,11 @@ const init = () => {
     data.sort(() => Math.random() - 0.5);
 
     let inversionCount = 0;
-    for (let i = 0; i < base * base - 1; i++) {
+    for (let i = 0; i < data.length - 1; i++) {
       if (data[i] === emptyValue) {
         continue;
       }
-      for (let j = i + 1; j < base * base; j++) {
+      for (let j = i + 1; j < data.length; j++) {
         if (data[j] === emptyValue) {
           continue;
         }
@@ -68,7 +68,7 @@ const switchPosition = (switchIndex = 0) => {
     }
     if (finish) {
       requestAnimationFrame(() => {
-        alert('Congrats! you finish the puzzle')
+        alert('Congrats! you finished the puzzle')
       });
     }
   });
@@ -99,14 +99,21 @@ const handleBtnRightClick = () => {
 
 // event listener
 window.addEventListener('keydown', (event) => {
-  if (event.key === 'ArrowUp') {
-    handleBtnUpClick();
-  } else if (event.key === 'ArrowDown') {
-    handleBtnDownClick();
-  } else if (event.key === 'ArrowLeft') {
-    handleBtnLeftClick();
-  } else if (event.key === 'ArrowRight') {
-    handleBtnRightClick();
+  switch (event.key) {
+    case 'ArrowUp':
+      handleBtnUpClick();
+      break;
+    case 'ArrowDown':
+      handleBtnDownClick();
+      break;
+    case 'ArrowLeft':
+      handleBtnLeftClick();
+      break;
+    case 'ArrowRight':
+      handleBtnRightClick();
+      break;
+    default:
+      break;
   }
 });
 
