@@ -1,6 +1,11 @@
 <template>
   <div class="container">
-    <div class="wrapper">
+    <div
+      :class="['wrapper', {
+        three: base === 3,
+        four: base === 4,
+      }]"
+    >
       <div v-for="id in data" :key="id" :class="['box', `box-${id}`]">{{ id === emptyValue ? '' : id }}</div>
     </div>
     <div class="controller">
@@ -17,43 +22,58 @@
 <script setup>
 import { reactive } from 'vue';
 
-const base = 3;
+const base = 4;
+let isValid = false;
 const emptyValue = base * base;
 let emptyIndex = 0;
 let row = 0;
 let col = 0;
 const data = reactive(Array.from({length: base * base}, (_, index) => index + 1)); // [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-const init = () => {
-  let isValid = false;
-
-  while (!isValid) {
-    data.sort(() => Math.random() - 0.5);
-
-    let inversionCount = 0;
-    for (let i = 0; i < data.length - 1; i++) {
-      if (data[i] === emptyValue) {
-        continue;
-      }
-      for (let j = i + 1; j < data.length; j++) {
-        if (data[j] === emptyValue) {
-          continue;
-        }
-        if (data[j] < data[i]) {
-          inversionCount += 1;
-        }
-      }
-    }
-
-    if (inversionCount % 2 === 0) {
-      isValid = true;
-    }
-  }
-};
 const calcEmptyInfo = () => {
   emptyIndex = data.findIndex((id) => id === emptyValue);
   [row, col] = [Math.floor(emptyIndex / base), emptyIndex % base];
 }
+const checkIsValid = () => {
+  let inversionCount = 0;
+
+  for (let i = 0; i < data.length - 1; i++) {
+    if (data[i] === emptyValue) {
+      continue;
+    }
+    for (let j = i + 1; j < data.length; j++) {
+      if (data[j] === emptyValue) {
+        continue;
+      }
+      if (data[j] < data[i]) {
+        inversionCount += 1;
+      }
+    }
+  }
+
+  if (
+    (
+      base % 2 === 1 &&
+      inversionCount % 2 === 0
+    ) ||
+    (
+      base % 2 === 0 &&
+      (
+        row % 2 === 0 && inversionCount % 2 === 1 ||
+        row % 2 === 1 && inversionCount % 2 === 0
+      )
+    )
+  ) {
+    isValid = true;
+  }
+}
+const init = () => {
+  while (!isValid) {
+    data.sort(() => Math.random() - 0.5);
+    calcEmptyInfo();
+    checkIsValid();
+  }
+};
 const switchPosition = (switchIndex = 0) => {
   [data[emptyIndex], data[switchIndex]] = [data[switchIndex], data[emptyIndex]];
 
@@ -118,7 +138,6 @@ window.addEventListener('keydown', (event) => {
 });
 
 init();
-calcEmptyInfo();
 </script>
 
 <style lang="scss" scoped>
@@ -136,6 +155,26 @@ calcEmptyInfo();
     border: 4px solid #fcfcfc;
     border-radius: 6px;
 
+    &.three {
+      .box {
+        &-9 {
+          background: black;
+        }
+      }
+    }
+    &.four {
+      grid-template: 1fr 1fr 1fr 1fr / 1fr 1fr 1fr 1fr;
+
+      .box {
+        width: 73px;
+        height: 73px;
+
+        &-16 {
+          background: black;
+        }
+      }
+    }
+
     .box {
       display: flex;
       justify-content: center;
@@ -146,10 +185,6 @@ calcEmptyInfo();
       border: 1px solid #fcfcfc;
       font-size: 20px;
       transition: 0.3s;
-  
-      &-9 {
-        background: black;
-      }
     }
   }
 
