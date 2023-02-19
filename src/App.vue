@@ -1,38 +1,55 @@
 <template>
   <div class="container">
-    <div
-      :class="['wrapper', {
-        three: base === 3,
-        four: base === 4,
-      }]"
-    >
-      <div v-for="id in data" :key="id" :class="['box', `box-${id}`]">{{ id === emptyValue ? '' : id }}</div>
+    <div v-if="!isGaming" class="init">
+      <p class="title">Puzzle Game</p>
+      <div class="level-options">
+        <button class="btn-level" @click="initGame('EASY')">Easy</button>
+        <button class="btn-level" @click="initGame('HARD')">Hard</button>
+      </div>
     </div>
-    <div class="controller">
-      <button @click="handleBtnUpClick" class="btn top">↑</button>
-      <div>
-        <button @click="handleBtnLeftClick" class="btn left">←</button>
-        <button @click="handleBtnDownClick" class="btn bottom">↓</button>
-        <button @click="handleBtnRightClick" class="btn right">→</button>
+    <div v-else class="game">
+      <p class="time">{{ sec }}</p>
+      <button class="btn-return" @click="handleBtnReturnClick">←</button>
+      <div
+        :class="['puzzle', {
+          three: base === 3,
+          four: base === 4,
+        }]"
+      >
+        <div v-for="id in data" :key="id" :class="['box', `box-${id}`]">{{ id === emptyValue ? '' : id }}</div>
+      </div>
+      <div class="controller">
+        <button @click="handleBtnUpClick" class="btn top">↑</button>
+        <div>
+          <button @click="handleBtnLeftClick" class="btn left">←</button>
+          <button @click="handleBtnDownClick" class="btn bottom">↓</button>
+          <button @click="handleBtnRightClick" class="btn right">→</button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive } from 'vue';
+import { ref, reactive } from 'vue';
 
-const base = 4;
+// configs
+let base = 3;
+
+// custom variables
+let emptyValue = base * base;
+let data = []; // [1, 2, 3, 4, 5, 6, 7, 8, 9]
+let isGaming = ref(false);
 let isValid = false;
-const emptyValue = base * base;
+let timer = null;
+let sec = ref(0);
 let emptyIndex = 0;
-let row = 0;
-let col = 0;
-const data = reactive(Array.from({length: base * base}, (_, index) => index + 1)); // [1, 2, 3, 4, 5, 6, 7, 8, 9]
+let emptyRow = 0;
+let emptyCol = 0;
 
 const calcEmptyInfo = () => {
   emptyIndex = data.findIndex((id) => id === emptyValue);
-  [row, col] = [Math.floor(emptyIndex / base), emptyIndex % base];
+  [emptyRow, emptyCol] = [Math.floor(emptyIndex / base), emptyIndex % base];
 }
 const checkIsValid = () => {
   let inversionCount = 0;
@@ -59,20 +76,29 @@ const checkIsValid = () => {
     (
       base % 2 === 0 &&
       (
-        row % 2 === 0 && inversionCount % 2 === 1 ||
-        row % 2 === 1 && inversionCount % 2 === 0
+        emptyRow % 2 === 0 && inversionCount % 2 === 1 ||
+        emptyRow % 2 === 1 && inversionCount % 2 === 0
       )
     )
   ) {
     isValid = true;
   }
 }
-const init = () => {
+const initGame = (level) => {
+  base = level === 'EASY' ? 3 : 4;
+  emptyValue = base * base;
+  data = reactive(Array.from({length: base * base}, (_, index) => index + 1));
+
   while (!isValid) {
     data.sort(() => Math.random() - 0.5);
     calcEmptyInfo();
     checkIsValid();
   }
+
+  isGaming.value = true;
+  timer = setInterval(() => {
+    sec.value += 1;
+  }, 1000);
 };
 const switchPosition = (switchIndex = 0) => {
   [data[emptyIndex], data[switchIndex]] = [data[switchIndex], data[emptyIndex]];
@@ -87,33 +113,43 @@ const switchPosition = (switchIndex = 0) => {
       }
     }
     if (finish) {
+      clearInterval(timer);
       requestAnimationFrame(() => {
-        alert('Congrats! you finished the puzzle')
+        alert(`Congrats! you finished the puzzle in ${sec.value}s`)
       });
+      isGaming.value = false;
+      sec.value = 0;
+      isValid = false;
     }
   });
 
   // calc
   calcEmptyInfo();
 }
+const handleBtnReturnClick = () => {
+  clearInterval(timer);
+  isGaming.value = false;
+  sec.value = 0;
+  isValid = false;
+}
 const handleBtnUpClick = () => {
-  if (row === base - 1) return;
-  const switchIndex = (row + 1) * base + col;
+  if (emptyRow === base - 1) return;
+  const switchIndex = (emptyRow + 1) * base + emptyCol;
   switchPosition(switchIndex);
 }
 const handleBtnDownClick = () => {
-  if (row === 0) return;
-  const switchIndex = (row - 1) * base + col;
+  if (emptyRow === 0) return;
+  const switchIndex = (emptyRow - 1) * base + emptyCol;
   switchPosition(switchIndex);
 }
 const handleBtnLeftClick = () => {
-  if (col === base - 1) return;
-  const switchIndex = row * base + (col + 1);
+  if (emptyCol === base - 1) return;
+  const switchIndex = emptyRow * base + (emptyCol + 1);
   switchPosition(switchIndex);
 }
 const handleBtnRightClick = () => {
-  if (col === 0) return;
-  const switchIndex = row * base + (col - 1);
+  if (emptyCol === 0) return;
+  const switchIndex = emptyRow * base + (emptyCol - 1);
   switchPosition(switchIndex);
 }
 
@@ -136,69 +172,104 @@ window.addEventListener('keydown', (event) => {
       break;
   }
 });
-
-init();
 </script>
 
 <style lang="scss" scoped>
 .container {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 500px;
+  height: 500px;
 
-  .wrapper {
-    display: grid;
-    grid-template: 1fr 1fr 1fr / 1fr 1fr 1fr;
-    width: 300px;
-    height: 300px;
-    border: 4px solid #fcfcfc;
-    border-radius: 6px;
+  .init {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 480px;
 
-    &.three {
-      .box {
-        &-9 {
-          background: black;
-        }
-      }
-    }
-    &.four {
-      grid-template: 1fr 1fr 1fr 1fr / 1fr 1fr 1fr 1fr;
-
-      .box {
-        width: 73px;
-        height: 73px;
-
-        &-16 {
-          background: black;
-        }
-      }
+    .title {
+      font-size: 48px;
     }
 
-    .box {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 98px;
-      height: 98px;
-      background: darkolivegreen;
-      border: 1px solid #fcfcfc;
-      font-size: 20px;
-      transition: 0.3s;
+    .level-options {
+      .btn-level {
+        margin: 0 10px;
+      }
     }
   }
 
-  .controller {
-    width: 300px;
-    height: 100px;
-    margin-top: 40px;
+  .game {
+    .time {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      margin: 0;
+    }
 
-    .btn {
-      width: 40px;
-      height: 40px;
-      margin: 2px;
-      padding: 0;
-      border: 1px solid #fff;
+    .btn-return {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      // height: 24px;
+    }
+
+    .puzzle {
+      display: grid;
+      grid-template: 1fr 1fr 1fr / 1fr 1fr 1fr;
+      width: 300px;
+      height: 300px;
+      border: 4px solid #fcfcfc;
+      border-radius: 6px;
+
+      &.three {
+        .box {
+          &-9 {
+            background: black;
+          }
+        }
+      }
+      &.four {
+        grid-template: 1fr 1fr 1fr 1fr / 1fr 1fr 1fr 1fr;
+
+        .box {
+          width: 73px;
+          height: 73px;
+
+          &-16 {
+            background: black;
+          }
+        }
+      }
+
+      .box {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 98px;
+        height: 98px;
+        background: darkolivegreen;
+        border: 1px solid #fcfcfc;
+        font-size: 20px;
+        transition: 0.3s;
+      }
+    }
+
+    .controller {
+      width: 300px;
+      height: 100px;
+      margin-top: 40px;
+
+      .btn {
+        width: 40px;
+        height: 40px;
+        margin: 2px;
+        padding: 0;
+        border: 1px solid #fff;
+      }
     }
   }
 }
