@@ -9,7 +9,7 @@
     </div>
     <div v-else class="game">
       <p class="time">{{ sec }}</p>
-      <button class="btn-return" @click="handleBtnReturnClick">←</button>
+      <button class="btn-return" @click="resetGame">←</button>
       <div
         :class="['puzzle', {
           three: base === 3,
@@ -100,6 +100,12 @@ const initGame = (level) => {
     sec.value += 1;
   }, 1000);
 };
+const resetGame = () => {
+  clearInterval(timer);
+  isGaming.value = false;
+  sec.value = 0;
+  isValid = false;
+}
 const switchPosition = (switchIndex = 0) => {
   [data[emptyIndex], data[switchIndex]] = [data[switchIndex], data[emptyIndex]];
 
@@ -113,24 +119,18 @@ const switchPosition = (switchIndex = 0) => {
       }
     }
     if (finish) {
-      clearInterval(timer);
+      const finishTime = sec.value;
       requestAnimationFrame(() => {
-        alert(`Congrats! you finished the puzzle in ${sec.value}s`)
+        alert(`Congrats! you finished the puzzle in ${finishTime}s`);
+        requestAnimationFrame(() => {
+          resetGame();
+        });
       });
-      isGaming.value = false;
-      sec.value = 0;
-      isValid = false;
     }
   });
 
   // calc
   calcEmptyInfo();
-}
-const handleBtnReturnClick = () => {
-  clearInterval(timer);
-  isGaming.value = false;
-  sec.value = 0;
-  isValid = false;
 }
 const handleBtnUpClick = () => {
   if (emptyRow === base - 1) return;
